@@ -536,7 +536,7 @@ function checkConditions() {
 
   sat[2][0] = rowCounts[2] === 1;
   sat[2][1] = total >= 12;
-  sat[2][2] = state[2][2];
+  sat[2][2] = true;
   sat[2][3] = true;
   outer1: for (let r = 1; r <= 3; r++)
     for (let c = 1; c <= 3; c++)
