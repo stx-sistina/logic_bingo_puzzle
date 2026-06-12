@@ -285,23 +285,34 @@
       font-size: 0.7rem;
     }
 
-    /* Grid: allow horizontal scroll if still too wide */
-    .grid-wrapper {
-      grid-template-columns: 44px repeat(5, 1fr);
-      grid-template-rows: 36px repeat(5, auto);
-      gap: 3px;
+    /* Scroll container — full bleed so the grid can be wider than the viewport */
+    .scroll-outer {
+      width: 100%;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      /* Subtle fade on right edge hints that more content is scrollable */
+      -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%);
+      mask-image: linear-gradient(to right, black 92%, transparent 100%);
     }
 
-    .header-cell { font-size: 0.68rem; padding: 2px 4px; }
+    /* Fixed-width columns so cells never get squeezed below readable size */
+    .grid-wrapper {
+      grid-template-columns: 44px repeat(5, 120px);
+      grid-template-rows: 36px repeat(5, auto);
+      gap: 4px;
+      width: max-content;  /* grid sets its own width; scroll-outer clips it */
+      max-width: none;
+    }
+
+    .header-cell { font-size: 0.72rem; padding: 2px 4px; }
 
     .cell {
-      padding: 7px 6px;
-      font-size: 0.64rem;
-      line-height: 1.4;
-      min-height: 72px;
+      padding: 8px 7px;
+      font-size: 0.7rem;
+      line-height: 1.45;
+      min-height: 90px;
       border-radius: 4px;
+      width: 120px;
     }
 
     /* Dot indicator: smaller */
@@ -348,7 +359,9 @@
   <span id="s-corners-label"></span><strong id="s-corners">0</strong>
 </div>
 
-<div class="grid-wrapper" id="grid"></div>
+<div class="scroll-outer">
+  <div class="grid-wrapper" id="grid"></div>
+</div>
 <button id="reset"></button>
 
 <div id="solved-banner">
