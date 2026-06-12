@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logical Reasoning Bingo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', 'Songti SC', 'SimSun', serif;
+    background: #f0f2f5;
+    color: #222;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px;
+  }
+
+  /* Header row: title centred, lang toggle pinned right */
+  .top-bar {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a237e;
+    letter-spacing: 0.3px;
+    text-align: center;
+  }
+
+  #lang-toggle {
+    position: absolute;
+    right: 0;
+    padding: 6px 14px;
+    background: #e8eaf6;
+    color: #3949ab;
+    border: 1px solid #9fa8da;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  #lang-toggle:hover { background: #c5cae9; }
+
+  .subtitle {
+    font-size: 0.92rem;
+    color: #555;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .subtitle em { color: #c62828; font-style: normal; font-weight: bold; }
+
+  .subtitle2 {
+    font-size: 0.88rem;
+    color: #444;
+    margin-bottom: 10px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .author {
+    font-size: 0.78rem;
+    color: #888;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* Stats bar */
+  #stats {
+    display: flex;
+    gap: 22px;
+    margin-bottom: 18px;
+    background: #fff;
+    border: 1px solid #d0d5e0;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-size: 0.83rem;
+    color: #444;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  #stats span { white-space: nowrap; }
+  #stats strong { color: #1a237e; font-weight: 700; }
+
+  /* Grid */
+  .grid-wrapper {
+    display: grid;
+    grid-template-columns: 84px repeat(5, 1fr);
+    grid-template-rows: 48px repeat(5, auto);
+    gap: 6px;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  .header-cell {
+    background: #c5cae9;
+    color: #1a237e;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    padding: 4px 6px;
+    text-align: center;
+  }
+
+  .corner { background: #e8eaf6; }
+
+  /* Puzzle cells */
+  .cell {
+    background: #fff;
+    border: 2px solid #d0d5e0;
+    border-radius: 6px;
+    padding: 13px 16px;
+    font-size: 0.94rem;
+    line-height: 1.55;
+    cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.1s, background 0.15s, border-color 0.15s;
+    user-select: none;
+    position: relative;
+    min-height: 126px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #333;
+  }
+
+  .cell:hover {
+    transform: scale(1.016);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.13);
+    z-index: 1;
+  }
+
+  /* Unmarked satisfied: pale blue */
+  .cell.satisfied {
+    background: #e3f0fb;
+    border-color: #64a8d8;
+  }
+  /* Unmarked violated: white/gray */
+  .cell.violated {
+    background: #fff;
+    border-color: #bbb;
+  }
+
+  /* Marked: thicker border */
+  .cell.marked { border-width: 3px; }
+
+  /* Marked + satisfied: medium green */
+  .cell.marked.satisfied {
+    background: #c8e6c9;
+    border-color: #43a047;
+  }
+  /* Marked + violated: pale red */
+  .cell.marked.violated {
+    background: #ffebee;
+    border-color: #e53935;
+  }
+
+  /* Special center cell */
+  .cell.special { font-weight: 700; color: #c62828; }
+  .cell.special.marked { color: #333; }
+
+  /* Hover highlight */
+  .cell.highlight {
+    outline: 3px solid #f59e0b;
+    outline-offset: -2px;
+    z-index: 2;
+  }
+
+  /* Dot indicator */
+  .cell::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid #bbb;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .cell.marked::before {
+    background: #43a047;
+    border-color: #43a047;
+  }
+  .cell.marked.violated::before {
+    background: #e53935;
+    border-color: #e53935;
+  }
+
+  /* Reset button */
+  #reset {
+    margin-top: 18px;
+    padding: 9px 34px;
+    background: #3949ab;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #reset:hover { background: #283593; }
+
+  /* Solved banner */
+  #solved-banner {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  #solved-banner.show { display: flex; }
+  #solved-box {
+    background: #fff;
+    border: 3px solid #43a047;
+    border-radius: 12px;
+    padding: 40px 56px;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+    max-width: 420px;
+  }
+  #solved-box h2 {
+    font-size: 1.9rem;
+    color: #2e7d32;
+    margin-bottom: 10px;
+  }
+  #solved-box p {
+    font-size: 1rem;
+    color: #444;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  #solved-close {
+    padding: 9px 32px;
+    background: #43a047;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #solved-close:hover { background: #2e7d32; }
+
+  /* ── Mobile ─────────────────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    body { padding: 16px 8px; }
+
+    h1 { font-size: 1.3rem; }
+
+    /* Give the lang button room without squashing the title */
+    #lang-toggle {
+      font-size: 0.72rem;
+      padding: 4px 8px;
+    }
+
+    .subtitle  { font-size: 0.75rem; }
+    .subtitle2 { font-size: 0.72rem; }
+    .author    { font-size: 0.65rem; }
+
+    /* Stats bar: tighter, smaller text, wraps naturally */
+    #stats {
+      gap: 10px;
+      padding: 6px 12px;
+      font-size: 0.7rem;
+    }
+
+    /* Grid: allow horizontal scroll if still too wide */
+    .grid-wrapper {
+      grid-template-columns: 44px repeat(5, 1fr);
+      grid-template-rows: 36px repeat(5, auto);
+      gap: 3px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .header-cell { font-size: 0.68rem; padding: 2px 4px; }
+
+    .cell {
+      padding: 7px 6px;
+      font-size: 0.64rem;
+      line-height: 1.4;
+      min-height: 72px;
+      border-radius: 4px;
+    }
+
+    /* Dot indicator: smaller */
+    .cell::before {
+      width: 7px;
+      height: 7px;
+      top: 4px;
+      right: 4px;
+    }
+
+    /* No scale transform on touch — it causes layout jank */
+    .cell:hover { transform: none; box-shadow: none; }
+
+    #reset { padding: 8px 24px; font-size: 0.82rem; }
+
+    #solved-box {
+      padding: 28px 24px;
+      margin: 16px;
+    }
+    #solved-box h2 { font-size: 1.4rem; }
+    #solved-box p  { font-size: 0.88rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1 id="ui-title"></h1>
+  <button id="lang-toggle"></button>
+</div>
+<p class="subtitle" id="ui-subtitle"></p>
+<p class="subtitle2" id="ui-subtitle2"></p>
+<p class="author" id="ui-author"></p>
+
+<div id="stats">
+  <span id="s-total-label"></span><strong id="s-total">0</strong>
+  &nbsp;&nbsp;
+  <span id="s-rows-label"></span><strong id="s-rows">0, 0, 0, 0, 0</strong>
+  &nbsp;&nbsp;
+  <span id="s-cols-label"></span><strong id="s-cols">0, 0, 0, 0, 0</strong>
+  &nbsp;&nbsp;
+  <span id="s-anti-label"></span><strong id="s-anti">0</strong>
+  &nbsp;&nbsp;
+  <span id="s-corners-label"></span><strong id="s-corners">0</strong>
+</div>
+
+<div class="grid-wrapper" id="grid"></div>
+<button id="reset"></button>
+
+<div id="solved-banner">
+  <div id="solved-box">
+    <h2 id="solved-title"></h2>
+    <p id="solved-body"></p>
+    <button id="solved-close"></button>
+  </div>
+</div>
+
+<script>
+// ── i18n ─────────────────────────────────────────────────────────────────────
+
+const STRINGS = {
+  en: {
+    title:        'Logical Reasoning Bingo',
+    subtitle:     'Mark <em>all and only</em> the correct squares. Click a square to toggle it.',
+    subtitle2:    "If five marked squares connect in a line, it means you're very smart!",
+    langToggle:   '中文',
+    colLabel:     c => 'Column ' + (c + 1),
+    rowLabel:     r => 'Row ' + (r + 1),
+    statTotal:    'Total marked: ',
+    statRows:     'Row counts: ',
+    statCols:     'Col counts: ',
+    statAnti:     'Anti-diagonal: ',
+    statCorners:  'Corners marked: ',
+    reset:        'Reset all',
+    solvedTitle:  "You're very smart!",
+    solvedBody:   'All conditions are satisfied and five marked squares connect in a line.',
+    solvedClose:  'Dismiss',
+    author:       'Author: Sistina with Claude',
+  },
+  zh: {
+    title:        '逻辑推理宾果',
+    subtitle:     '标记<em>所有且仅有</em>正确的方格。点击方格进行切换。',
+    subtitle2:    '如果五个已标记方格连成一线，说明你很聪明！',
+    langToggle:   'English',
+    colLabel:     c => '第' + (c + 1) + '列',
+    rowLabel:     r => '第' + (r + 1) + '行',
+    statTotal:    '已标记总数：',
+    statRows:     '各行计数：',
+    statCols:     '各列计数：',
+    statAnti:     '副对角线：',
+    statCorners:  '已标记角落：',
+    reset:        '重置',
+    solvedTitle:  '你很聪明！',
+    solvedBody:   '所有条件均已满足，且五个已标记方格连成了一线。',
+    solvedClose:  '关闭',
+    author:       '作者：猫猫 + Claude',
+  },
+};
+
+const CLUES = {
+  en: [
+    [
+      "This square should be marked",
+      "The total number of marked squares in the whole grid is ≤ 10",
+      "The number of marked squares in Column 2 is greater than in Column 3",
+      "There exists a marked square whose surrounding squares are all unmarked",
+      "The five marked squares that form a line in the solution make up a whole column",
+    ],
+    [
+      "The number of marked squares in this row equals the number in this column",
+      "The total number of marked squares in the whole grid is odd",
+      "No marked square has all of its surrounding squares unmarked",
+      "The anti-diagonal has exactly 3 marked squares",
+      "The five marked squares that form a line in the solution make up a whole row",
+    ],
+    [
+      "The number of marked squares in this row is exactly 1",
+      "The total number of marked squares in the whole grid is ≥ 12",
+      "SPECIAL:Please mark this square first",
+      "There is no unmarked square whose up, down, left, and right neighbors are all marked",
+      "The number of marked corner squares is even",
+    ],
+    [
+      "There exists a 2\xd72 block in which all 4 squares are marked",
+      "The number of marked squares in this column is less than in Column 4",
+      "The number of marked squares in this row is greater than in this column",
+      "Among the 8 surrounding squares, the number of marked squares is odd",
+      "The number of marked squares in Column 5 is less than 2",
+    ],
+    [
+      "The number of marked squares in Column 1 is greater than in Column 4",
+      "The number of marked squares in Column 2 is greater than 2",
+      "The total number of marked squares in the whole grid is ≥ 10",
+      "The number of marked squares in Column 4 is the largest among all columns",
+      "The lower-right 3\xd73 block has more marked squares than the upper-left 3\xd73 block",
+    ],
+  ],
+  zh: [
+    [
+      "此方格应被标记",
+      "全格中已标记方格的总数 ≤ 10",
+      "第2列中已标记方格的数量多于第3列",
+      "存在一个已标记方格，其周围所有方格均未被标记",
+      "答案中连成一线的五个已标记方格构成完整的一列",
+    ],
+    [
+      "本行已标记方格的数量等于本列已标记方格的数量",
+      "全格中已标记方格的总数为奇数",
+      "没有任何已标记方格的周围方格全部未被标记",
+      "副对角线上恰好有3个已标记方格",
+      "答案中连成一线的五个已标记方格构成完整的一行",
+    ],
+    [
+      "本行中已标记方格的数量恰好为1",
+      "全格中已标记方格的总数 ≥ 12",
+      "SPECIAL:请先标记此方格",
+      "不存在某个未被标记的方格，使其上、下、左、右的相邻方格全部被标记",
+      "已标记的角落方格数量为偶数",
+    ],
+    [
+      "存在一个2\xd72的方块，其中4个方格全部被标记",
+      "本列中已标记方格的数量少于第4列",
+      "本行中已标记方格的数量多于本列",
+      "周围8个方格中，已标记方格的数量为奇数",
+      "第5列中已标记方格的数量少于2",
+    ],
+    [
+      "第1列中已标记方格的数量多于第4列",
+      "第2列中已标记方格的数量多于2",
+      "全格中已标记方格的总数 ≥ 10",
+      "第4列中已标记方格的数量在所有列中最多",
+      "右下角3\xd73方块中已标记方格的数量多于左上角3\xd73方块",
+    ],
+  ],
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let lang = 'en';
+const state = Array.from({length: 5}, () => Array(5).fill(false));
+
+// ── Logic ─────────────────────────────────────────────────────────────────────
+
+function neighborCount(r, c) {
+  let n = 0;
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5 && state[nr][nc]) n++;
+    }
+  return n;
+}
+
+function computeStats() {
+  const total = state.flat().filter(Boolean).length;
+  const rowCounts = state.map(row => row.filter(Boolean).length);
+  const colCounts = [0,1,2,3,4].map(c => state.reduce((s, row) => s + (row[c] ? 1 : 0), 0));
+  const anti = [0,1,2,3,4].reduce((s, i) => s + (state[i][4 - i] ? 1 : 0), 0);
+  const corners = [[0,0],[0,4],[4,0],[4,4]].reduce((s, [r,c]) => s + (state[r][c] ? 1 : 0), 0);
+  return { total, rowCounts, colCounts, anti, corners };
+}
+
+function checkConditions() {
+  const { total, rowCounts, colCounts, anti, corners } = computeStats();
+  const sat = Array.from({length: 5}, () => Array(5).fill(false));
+
+  sat[0][0] = state[0][0];
+  sat[0][1] = total <= 10;
+  sat[0][2] = colCounts[1] > colCounts[2];
+  sat[0][3] = state.some((row, r) => row.some((v, c) => v && neighborCount(r, c) === 0));
+  sat[0][4] = colCounts.some(n => n === 5);
+
+  sat[1][0] = rowCounts[1] === colCounts[0];
+  sat[1][1] = total % 2 === 1;
+  sat[1][2] = !state.some((row, r) => row.some((v, c) => v && neighborCount(r, c) === 0));
+  sat[1][3] = anti === 3;
+  sat[1][4] = rowCounts.some(n => n === 5);
+
+  sat[2][0] = rowCounts[2] === 1;
+  sat[2][1] = total >= 12;
+  sat[2][2] = state[2][2];
+  sat[2][3] = true;
+  outer1: for (let r = 1; r <= 3; r++)
+    for (let c = 1; c <= 3; c++)
+      if (!state[r][c] && state[r-1][c] && state[r+1][c] && state[r][c-1] && state[r][c+1]) {
+        sat[2][3] = false; break outer1;
+      }
+  sat[2][4] = corners % 2 === 0;
+
+  sat[3][0] = false;
+  outer2: for (let r = 0; r <= 3; r++)
+    for (let c = 0; c <= 3; c++)
+      if (state[r][c] && state[r][c+1] && state[r+1][c] && state[r+1][c+1]) {
+        sat[3][0] = true; break outer2;
+      }
+  sat[3][1] = colCounts[1] < colCounts[3];
+  sat[3][2] = rowCounts[3] > colCounts[2];
+  sat[3][3] = neighborCount(3, 3) % 2 === 1;
+  sat[3][4] = colCounts[4] < 2;
+
+  sat[4][0] = colCounts[0] > colCounts[3];
+  sat[4][1] = colCounts[1] > 2;
+  sat[4][2] = total >= 10;
+  sat[4][3] = colCounts[3] === Math.max(...colCounts);
+  let lr = 0, ul = 0;
+  for (let r = 2; r <= 4; r++) for (let c = 2; c <= 4; c++) if (state[r][c]) lr++;
+  for (let r = 0; r <= 2; r++) for (let c = 0; c <= 2; c++) if (state[r][c]) ul++;
+  sat[4][4] = lr > ul;
+
+  return sat;
+}
+
+function isSolved(sat, rowCounts, colCounts) {
+  // Every cell must be marked iff its condition is satisfied
+  for (let r = 0; r < 5; r++)
+    for (let c = 0; c < 5; c++)
+      if (sat[r][c] !== state[r][c]) return false;
+  // Five marked squares form a line (row, column, or either diagonal)
+  if (rowCounts.some(n => n === 5)) return true;
+  if (colCounts.some(n => n === 5)) return true;
+  if ([0,1,2,3,4].every(i => state[i][i])) return true;
+  if ([0,1,2,3,4].every(i => state[i][4-i])) return true;
+  return false;
+}
+
+// ── Highlight ─────────────────────────────────────────────────────────────────
+
+function getHighlightCells(hr, hc) {
+  const allMarked = () => {
+    const cells = [];
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 5; c++)
+        if (state[r][c]) cells.push([r, c]);
+    return cells;
+  };
+  const col  = c => Array.from({length: 5}, (_, r) => [r, c]);
+  const row  = r => Array.from({length: 5}, (_, c) => [r, c]);
+  const antiDiag = () => [0,1,2,3,4].map(i => [i, 4-i]);
+  const corners  = () => [[0,0],[0,4],[4,0],[4,4]];
+  const dedup = cells => {
+    const seen = new Set();
+    return cells.filter(([r,c]) => { const k=r+','+c; return seen.has(k)?false:seen.add(k); });
+  };
+
+  const H = {
+    '0,0': () => [[0,0]],
+    '0,1': () => allMarked(),
+    '0,2': () => [...col(1), ...col(2)],
+    '0,3': () => {
+      const cells = [];
+      for (let r = 0; r < 5; r++)
+        for (let c = 0; c < 5; c++)
+          if (state[r][c] && neighborCount(r, c) === 0) cells.push([r, c]);
+      return cells;
+    },
+    '0,4': () => {
+      const cells = [];
+      for (let c = 0; c < 5; c++)
+        if (state.reduce((s, row) => s + (row[c] ? 1 : 0), 0) === 5) cells.push(...col(c));
+      return cells;
+    },
+    '1,0': () => [...row(1), ...col(0)],
+    '1,1': () => allMarked(),
+    '1,2': () => {
+      const cells = [];
+      for (let r = 0; r < 5; r++)
+        for (let c = 0; c < 5; c++)
+          if (state[r][c] && neighborCount(r, c) === 0) cells.push([r, c]);
+      return cells;
+    },
+    '1,3': () => antiDiag(),
+    '1,4': () => {
+      const cells = [];
+      for (let r = 0; r < 5; r++)
+        if (state[r].filter(Boolean).length === 5) cells.push(...row(r));
+      return cells;
+    },
+    '2,0': () => row(2),
+    '2,1': () => allMarked(),
+    '2,2': () => [[2,2]],
+    '2,3': () => {
+      const cells = [];
+      for (let r = 1; r <= 3; r++)
+        for (let c = 1; c <= 3; c++)
+          if (!state[r][c] && state[r-1][c] && state[r+1][c] && state[r][c-1] && state[r][c+1])
+            cells.push([r, c]);
+      return cells;
+    },
+    '2,4': () => corners(),
+    '3,0': () => {
+      const cells = [];
+      for (let r = 0; r <= 3; r++)
+        for (let c = 0; c <= 3; c++)
+          if (state[r][c] && state[r][c+1] && state[r+1][c] && state[r+1][c+1])
+            cells.push([r,c],[r,c+1],[r+1,c],[r+1,c+1]);
+      return dedup(cells);
+    },
+    '3,1': () => [...col(1), ...col(3)],
+    '3,2': () => [...row(3), ...col(2)],
+    '3,3': () => {
+      const cells = [];
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++)
+          if (!(dr === 0 && dc === 0)) cells.push([3+dr, 3+dc]);
+      return cells;
+    },
+    '3,4': () => col(4),
+    '4,0': () => [...col(0), ...col(3)],
+    '4,1': () => col(1),
+    '4,2': () => allMarked(),
+    '4,3': () => dedup([...col(3), ...allMarked()]),
+    '4,4': () => {
+      const cells = [];
+      for (let r = 0; r <= 2; r++) for (let c = 0; c <= 2; c++) cells.push([r, c]);
+      for (let r = 2; r <= 4; r++) for (let c = 2; c <= 4; c++) cells.push([r, c]);
+      return dedup(cells);
+    },
+  };
+
+  const fn = H[hr + ',' + hc];
+  return fn ? fn() : [];
+}
+
+function clearHighlights() {
+  document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+}
+
+function applyHighlights(hr, hc) {
+  clearHighlights();
+  for (const [r, c] of getHighlightCells(hr, hc)) {
+    const el = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (el) el.classList.add('highlight');
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function applyLang() {
+  const s = STRINGS[lang];
+
+  document.getElementById('ui-title').textContent = s.title;
+  document.getElementById('ui-subtitle').innerHTML =
+    'Mark <em>all and only</em> the correct squares. Click a square to toggle it.'
+      .replace('Mark <em>all and only</em>', () =>
+        lang === 'en'
+          ? 'Mark <em>all and only</em>'
+          : '标记<em>所有且仅有</em>');
+  document.getElementById('ui-subtitle').innerHTML = s.subtitle;
+  document.getElementById('ui-subtitle2').textContent = s.subtitle2;
+  document.getElementById('lang-toggle').textContent = s.langToggle;
+  document.getElementById('s-total-label').textContent = s.statTotal;
+  document.getElementById('s-rows-label').textContent  = s.statRows;
+  document.getElementById('s-cols-label').textContent  = s.statCols;
+  document.getElementById('s-anti-label').textContent  = s.statAnti;
+  document.getElementById('s-corners-label').textContent = s.statCorners;
+  document.getElementById('reset').textContent        = s.reset;
+  document.getElementById('solved-title').textContent = s.solvedTitle;
+  document.getElementById('solved-body').textContent  = s.solvedBody;
+  document.getElementById('solved-close').textContent = s.solvedClose;
+  document.getElementById('ui-author').textContent    = s.author;
+
+  // Column / row headers (skip corner at index 0)
+  const headers = document.querySelectorAll('.header-cell:not(.corner)');
+  // First 5 are column headers, next 5 (every 6th child in rows) are row labels
+  let hi = 0;
+  for (let c = 0; c < 5; c++) headers[hi++].textContent = s.colLabel(c);
+  for (let r = 0; r < 5; r++) headers[hi++].textContent = s.rowLabel(r);
+
+  // Cell clue text
+  const clues = CLUES[lang];
+  for (let r = 0; r < 5; r++)
+    for (let c = 0; c < 5; c++) {
+      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      let text = clues[r][c];
+      if (text.startsWith('SPECIAL:')) text = text.slice(8);
+      cell.textContent = text;
+    }
+}
+
+function update() {
+  const { total, rowCounts, colCounts, anti, corners } = computeStats();
+  const sat = checkConditions();
+
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-rows').textContent    = rowCounts.join(', ');
+  document.getElementById('s-cols').textContent    = colCounts.join(', ');
+  document.getElementById('s-anti').textContent    = anti;
+  document.getElementById('s-corners').textContent = corners;
+
+  for (let r = 0; r < 5; r++)
+    for (let c = 0; c < 5; c++) {
+      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      cell.classList.toggle('marked',    state[r][c]);
+      cell.classList.toggle('satisfied', sat[r][c]);
+      cell.classList.toggle('violated',  !sat[r][c]);
+    }
+
+  if (isSolved(sat, rowCounts, colCounts))
+    document.getElementById('solved-banner').classList.add('show');
+}
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  const s = STRINGS[lang];
+
+  const corner = document.createElement('div');
+  corner.className = 'header-cell corner';
+  grid.appendChild(corner);
+
+  for (let c = 0; c < 5; c++) {
+    const h = document.createElement('div');
+    h.className = 'header-cell';
+    h.textContent = s.colLabel(c);
+    grid.appendChild(h);
+  }
+
+  for (let r = 0; r < 5; r++) {
+    const label = document.createElement('div');
+    label.className = 'header-cell';
+    label.textContent = s.rowLabel(r);
+    grid.appendChild(label);
+
+    for (let c = 0; c < 5; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+
+      let text = CLUES.en[r][c]; // always start with EN text; applyLang() will set correct
+      if (text.startsWith('SPECIAL:')) {
+        cell.classList.add('special');
+        text = text.slice(8);
+      }
+      cell.textContent = text;
+
+      cell.addEventListener('click', () => {
+        state[r][c] = !state[r][c];
+        update();
+        applyHighlights(r, c);
+      });
+      cell.addEventListener('mouseenter', () => applyHighlights(r, c));
+      cell.addEventListener('mouseleave', clearHighlights);
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+document.getElementById('lang-toggle').addEventListener('click', () => {
+  lang = lang === 'en' ? 'zh' : 'en';
+  applyLang();
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  for (let r = 0; r < 5; r++)
+    for (let c = 0; c < 5; c++)
+      state[r][c] = false;
+  update();
+});
+
+const banner = document.getElementById('solved-banner');
+document.getElementById('solved-close').addEventListener('click', () => banner.classList.remove('show'));
+banner.addEventListener('click', e => { if (e.target === banner) banner.classList.remove('show'); });
+
+buildGrid();
+applyLang();
+update();
+</script>
+</body>
+</html>
